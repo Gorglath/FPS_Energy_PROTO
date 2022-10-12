@@ -108,6 +108,10 @@ protected:
 	virtual void HandleOverchargeTimer(float& deltaTime);
 	/** Resets the overcharge parameters*/
 	virtual void ResetOverchargeState();
+	/** Check for energy charge drop collision*/
+	virtual void CheckForEnergyDrop();
+	/** Overlap sphere to detect hold interactables, return the first one hit*/
+	virtual AHoldInteractor* DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor = NONE);
 	struct TouchData
 	{
 		TouchData() { bIsPressed = false;Location=FVector::ZeroVector;}

@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FPS_Energy_PROTOCharacter.h"
+
+#include "EnergyChargeDrop.h"
 #include "FPS_Energy_PROTOProjectile.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
@@ -137,35 +139,7 @@ void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
 	if(m_holdInteractor)
 		return;
 	
-	TArray<AActor*> actorsFound;
-	TArray<TEnumAsByte<EObjectTypeQuery>> layersToDetect;
-	TArray<AActor*> actorsToIgnore;
-
-	actorsToIgnore.Init(this,1);
-
-	TArray<AActor*> attachedActors;
-	GetAttachedActors(attachedActors,true,true);
-
-	for (AActor* actor:attachedActors)
-		actorsToIgnore.Add(actor);
-	
-	layersToDetect.Init(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel2),1);
-	UKismetSystemLibrary::SphereOverlapActors(
-		GetWorld(),
-		GetActorLocation(),
-		100, //TODO: replace hardcoded variable
-		layersToDetect,
-		nullptr,
-		actorsToIgnore,
-		actorsFound
-		);
-
-	//DrawDebugSphere(GetWorld(),GetActorLocation(),100,18,FColor::Blue,false,5,0,1.0f);
-
-	if(actorsFound.IsEmpty())
-		return;
-
-	m_holdInteractor = Cast<AHoldInteractor>(actorsFound[0]);
+	m_holdInteractor = DetectCloseHoldInteractables();
 	
 	if(!m_holdInteractor)
 		return;
@@ -181,6 +155,59 @@ void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
 
 	StartInteracting();
 }
+AHoldInteractor* AFPS_Energy_PROTOCharacter::DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor)
+{	TArray<AActor*> actorsFound;
+	TArray<TEnumAsByte<EObjectTypeQuery>> layersToDetect;
+	TArray<AActor*> actorsToIgnore;
+
+	actorsToIgnore.Init(this,1);
+
+	TArray<AActor*> attachedActors;
+	GetAttachedActors(attachedActors,true,true);
+
+	for (AActor* actor:attachedActors)
+		actorsToIgnore.Add(actor);
+	
+	layersToDetect.Init(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel2),1);
+	UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(),
+		GetActorLocation(),
+		125, //TODO: replace hardcoded variable
+		layersToDetect,
+		nullptr,
+		actorsToIgnore,
+		actorsFound
+		);
+
+	//DrawDebugSphere(GetWorld(),GetActorLocation(),100,18,FColor::Blue,false,5,0,1.0f);
+	
+	if(actorsFound.IsEmpty())
+		return nullptr;
+	
+	bool foundType{false};
+	if(typeToLookFor == NONE)
+	{
+		foundType = true;
+		m_holdInteractor = Cast<AHoldInteractor>(actorsFound[0]);
+	}
+	else
+	{
+		for (AActor* actor : actorsFound)
+		{
+			m_holdInteractor = Cast<AHoldInteractor>(actor);
+			if(!m_holdInteractor)
+				continue;
+
+			if(m_holdInteractor->GetInteractorType() == typeToLookFor)
+			{
+				foundType = true;
+				break;
+			}
+		}
+	}
+	return ((foundType)? m_holdInteractor:nullptr);
+}
+
 void AFPS_Energy_PROTOCharacter::CheckForHoldInteractors()
 {
 	StopInteracting();
@@ -197,11 +224,30 @@ void AFPS_Energy_PROTOCharacter::HandleInteractionCompleted()
 	case CHEST:
 		RemoveCharges();
 		break;
+	case DROP:
+		AddCharge();
 	}
+	StopInteracting();
+}
+
+void AFPS_Energy_PROTOCharacter::CheckForEnergyDrop()
+{
+	if(m_iNumberOfCharges >= m_iMaxNumberOfCharges - 1)
+		return;
+
+	m_holdInteractor = DetectCloseHoldInteractables(DROP);
+	
+	if(!m_holdInteractor)
+		return;
+
+	Cast<AEnergyChargeDrop>(m_holdInteractor)->InstanInteraction();
+	HandleInteractionCompleted();
 }
 
 void AFPS_Energy_PROTOCharacter::Tick(float DeltaSeconds)
 {
+	CheckForEnergyDrop();
+	
 	if(m_bIsOvercharged)
 		HandleOverchargeTimer(DeltaSeconds);
 	
@@ -215,7 +261,6 @@ void AFPS_Energy_PROTOCharacter::Tick(float DeltaSeconds)
 	{
 		m_bIsHoldInteractorComplete = true;
 		HandleInteractionCompleted();
-		StopInteracting();
 	}
 }
 

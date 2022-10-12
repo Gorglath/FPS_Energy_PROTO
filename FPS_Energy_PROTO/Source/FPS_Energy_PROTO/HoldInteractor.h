@@ -10,14 +10,15 @@ enum EHoldInteractorType
 {
 	NONE UMETA("NONE"),
 	PYLON UMETA("Energy Pylon"),
-	CHEST UMETA("Energy Chest")
+	CHEST UMETA("Energy Chest"),
+	DROP UMETA("Energy charge drop")
 	
 };
 UCLASS()
 class FPS_ENERGY_PROTO_API AHoldInteractor : public AActor
 {
 	GENERATED_BODY()
-
+protected:
 	UPROPERTY(EditAnywhere, Category = "Hold Interactor")
 	float m_fTimeToHoldForActivation{1.0f};
 	
@@ -55,6 +56,8 @@ public:
 
 	virtual void ResetInteraction();
 
+	virtual void CompletedInteraction();
+	
 	bool GetIsCompleted() const{return m_bIsCompleted;}
 	EHoldInteractorType GetInteractorType() const{return m_eHoldInteractorType;}
 };
