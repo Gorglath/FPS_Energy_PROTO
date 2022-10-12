@@ -3,6 +3,8 @@
 
 #include "HoldInteractor.h"
 
+#include "FPS_Energy_PROTOGameMode.h"
+
 // Sets default values
 AHoldInteractor::AHoldInteractor()
 {
@@ -12,13 +14,15 @@ AHoldInteractor::AHoldInteractor()
 	m_smInteractorMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Interactor mesh"));
 	RootComponent = m_smInteractorMeshComponent;
 	
+	m_bIsCompleted = true;
 }
 
 // Called when the game starts or when spawned
 void AHoldInteractor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if(m_eHoldInteractorType == CHEST)
+		m_bIsCompleted = false;
 }
 
 void AHoldInteractor::EndInteraction()
@@ -35,6 +39,8 @@ void AHoldInteractor::EndInteraction()
 void AHoldInteractor::ResetInteraction()
 {
 	m_bIsCompleted = false;
+	m_fHoldingTimer = 0.0f;
+	m_bIsInteracted = false;
 	OnResetInteraction();
 }
 void AHoldInteractor::StartInteraction()
@@ -58,6 +64,8 @@ void AHoldInteractor::Tick(float DeltaTime)
 
 	if(m_fHoldingTimer < m_fTimeToHoldForActivation)
 		return;
+
+	Cast<AFPS_Energy_PROTOGameMode>(GetWorld()->GetAuthGameMode())->ActivateRandomPylon();
 
 	m_bIsCompleted = true;
 	OnCompletedInteraction();

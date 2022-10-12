@@ -17,8 +17,6 @@ UCLASS()
 class FPS_ENERGY_PROTO_API AHoldInteractor : public AActor
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* m_smInteractorMeshComponent{nullptr};
 
 	UPROPERTY(EditAnywhere, Category = "Hold Interactor")
 	float m_fTimeToHoldForActivation{1.0f};
@@ -27,9 +25,11 @@ class FPS_ENERGY_PROTO_API AHoldInteractor : public AActor
 	TEnumAsByte<EHoldInteractorType> m_eHoldInteractorType{NONE};
 	//helpers
 	bool m_bIsInteracted{false};
-	bool m_bIsCompleted{false};
+	bool m_bIsCompleted{true};
 	float m_fHoldingTimer{0.0f};
 public:	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UStaticMeshComponent* m_smInteractorMeshComponent{nullptr};
 	// Sets default values for this actor's properties
 	AHoldInteractor();
 
@@ -54,7 +54,7 @@ public:
 	virtual void EndInteraction();
 
 	virtual void ResetInteraction();
-	
+
 	bool GetIsCompleted() const{return m_bIsCompleted;}
 	EHoldInteractorType GetInteractorType() const{return m_eHoldInteractorType;}
 };

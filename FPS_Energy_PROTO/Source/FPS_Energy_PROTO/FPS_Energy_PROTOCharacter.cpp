@@ -171,7 +171,7 @@ void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
 		return;
 
 	if(m_holdInteractor->GetIsCompleted()
-		||m_holdInteractor->GetInteractorType() == CHEST && m_iNumberOfCharges < 1)
+		||(m_holdInteractor->GetInteractorType() == CHEST && m_iNumberOfCharges < 1))
 	{
 		m_holdInteractor = nullptr;
 		return;
