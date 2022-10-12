@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/InputSettings.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -58,6 +59,8 @@ void AFPS_Energy_PROTOCharacter::SetupPlayerInputComponent(class UInputComponent
 	// Bind fire event
 	PlayerInputComponent->BindAction("PrimaryAction", IE_Pressed, this, &AFPS_Energy_PROTOCharacter::OnPrimaryAction);
 
+	PlayerInputComponent->BindAction(TEXT("Interact"),IE_Pressed, this, &AFPS_Energy_PROTOCharacter::CheckIfInteracting);
+	PlayerInputComponent->BindAction(TEXT("Interact"),IE_Released,this, &AFPS_Energy_PROTOCharacter::CheckForHoldInteractors);
 	// Enable touchscreen input
 	EnableTouchscreenMovement(PlayerInputComponent);
 
@@ -73,6 +76,149 @@ void AFPS_Energy_PROTOCharacter::SetupPlayerInputComponent(class UInputComponent
 	PlayerInputComponent->BindAxis("Turn Right / Left Gamepad", this, &AFPS_Energy_PROTOCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("Look Up / Down Gamepad", this, &AFPS_Energy_PROTOCharacter::LookUpAtRate);
 }
+
+void AFPS_Energy_PROTOCharacter::AddCharge()
+{
+	m_iNumberOfCharges++;
+	if(m_iNumberOfCharges < m_iMaxNumberOfCharges)
+	{
+		OnAddedCharge(m_iNumberOfCharges);
+	}
+	else
+	{
+		OnAddedOverCharge();
+		m_bIsOvercharged = true;
+	}
+}
+void AFPS_Energy_PROTOCharacter::DropCharge()
+{
+	m_iNumberOfCharges--;
+	OnDroppedOvercharge();
+	ResetOverchargeState();
+}
+void AFPS_Energy_PROTOCharacter::RemoveCharges()
+{
+	m_iNumberOfCharges = 0;
+	if(m_bIsOvercharged)
+	{
+		ResetOverchargeState();
+	}
+	OnReleaseCharges();
+}
+void AFPS_Energy_PROTOCharacter::ResetOverchargeState()
+{
+	m_bIsOvercharged = false;
+	m_fOverchargeDurationCounter = 0.0f;
+}
+
+void AFPS_Energy_PROTOCharacter::StartInteracting()
+{
+	m_holdInteractor->StartInteraction();
+}
+void AFPS_Energy_PROTOCharacter::StopInteracting()
+{
+	if(!m_holdInteractor)
+		return;
+	
+	m_holdInteractor->EndInteraction();
+	m_holdInteractor = nullptr;
+}
+void AFPS_Energy_PROTOCharacter::HandleOverchargeTimer(float& deltaTime)
+{
+	m_fOverchargeDurationCounter+= deltaTime;
+	if(m_fOverchargeDurationCounter < m_fOverChargeDuration)
+		return;
+
+	DropCharge();
+}
+
+void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
+{
+	if(m_holdInteractor)
+		return;
+	
+	TArray<AActor*> actorsFound;
+	TArray<TEnumAsByte<EObjectTypeQuery>> layersToDetect;
+	TArray<AActor*> actorsToIgnore;
+
+	actorsToIgnore.Init(this,1);
+
+	TArray<AActor*> attachedActors;
+	GetAttachedActors(attachedActors,true,true);
+
+	for (AActor* actor:attachedActors)
+		actorsToIgnore.Add(actor);
+	
+	layersToDetect.Init(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel2),1);
+	UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(),
+		GetActorLocation(),
+		100, //TODO: replace hardcoded variable
+		layersToDetect,
+		nullptr,
+		actorsToIgnore,
+		actorsFound
+		);
+
+	//DrawDebugSphere(GetWorld(),GetActorLocation(),100,18,FColor::Blue,false,5,0,1.0f);
+
+	if(actorsFound.IsEmpty())
+		return;
+
+	m_holdInteractor = Cast<AHoldInteractor>(actorsFound[0]);
+	
+	if(!m_holdInteractor)
+		return;
+
+	if(m_holdInteractor->GetIsCompleted()
+		||m_holdInteractor->GetInteractorType() == CHEST && m_iNumberOfCharges < 1)
+	{
+		m_holdInteractor = nullptr;
+		return;
+	}
+
+	m_bIsHoldInteractorComplete = false;
+
+	StartInteracting();
+}
+void AFPS_Energy_PROTOCharacter::CheckForHoldInteractors()
+{
+	StopInteracting();
+}
+void AFPS_Energy_PROTOCharacter::HandleInteractionCompleted()
+{
+	switch (m_holdInteractor->GetInteractorType())
+	{
+	case NONE:
+		break;
+	case PYLON:
+		AddCharge();
+		break;
+	case CHEST:
+		RemoveCharges();
+		break;
+	}
+}
+
+void AFPS_Energy_PROTOCharacter::Tick(float DeltaSeconds)
+{
+	if(m_bIsOvercharged)
+		HandleOverchargeTimer(DeltaSeconds);
+	
+	if(m_bIsHoldInteractorComplete)
+		return;
+
+	if(!m_holdInteractor)
+		return;
+
+	if(m_holdInteractor->GetIsCompleted())
+	{
+		m_bIsHoldInteractorComplete = true;
+		HandleInteractionCompleted();
+		StopInteracting();
+	}
+}
+
 
 void AFPS_Energy_PROTOCharacter::OnPrimaryAction()
 {

@@ -23,6 +23,9 @@ void AHoldInteractor::BeginPlay()
 
 void AHoldInteractor::EndInteraction()
 {
+	if(m_eHoldInteractorType == CHEST)
+		m_bIsCompleted = false;
+	
 	if(m_bIsCompleted)
 		return;
 

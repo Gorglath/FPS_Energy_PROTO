@@ -19,7 +19,7 @@ class FPS_ENERGY_PROTO_API AHoldInteractor : public AActor
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* m_smInteractorMeshComponent{nullptr};
-	
+
 	UPROPERTY(EditAnywhere, Category = "Hold Interactor")
 	float m_fTimeToHoldForActivation{1.0f};
 	
@@ -56,4 +56,5 @@ public:
 	virtual void ResetInteraction();
 	
 	bool GetIsCompleted() const{return m_bIsCompleted;}
+	EHoldInteractorType GetInteractorType() const{return m_eHoldInteractorType;}
 };

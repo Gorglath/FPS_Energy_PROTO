@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HoldInteractor.h"
 #include "GameFramework/Character.h"
 #include "FPS_Energy_PROTOCharacter.generated.h"
 
@@ -30,12 +31,19 @@ class AFPS_Energy_PROTOCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
 
+	
+	//helpers
+	AHoldInteractor* m_holdInteractor{nullptr};
+	int m_iNumberOfCharges{0};
+	float m_fOverchargeDurationCounter{0.0f};
+	bool m_bIsHoldInteractorComplete{true};
+	bool m_bIsOvercharged{false};
 public:
 	AFPS_Energy_PROTOCharacter();
 
 protected:
 	virtual void BeginPlay();
-
+	virtual void Tick(float DeltaSeconds) override;
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -44,6 +52,20 @@ public:
 	/** Delegate to whom anyone can subscribe to receive this event */
 	UPROPERTY(BlueprintAssignable, Category = "Interaction")
 	FOnUseItem OnUseItem;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category = "Electic Charges")
+	int m_iMaxNumberOfCharges{3};
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category = "Electic Charges")
+	float m_fOverChargeDuration{10.0f};
+	//Blueprint callable events.
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnAddedCharge(int currentNumberOfCharges);
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnReleaseCharges();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnAddedOverCharge();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnDroppedOvercharge();
 protected:
 	
 	/** Fires a projectile. */
@@ -66,7 +88,26 @@ protected:
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	 */
 	void LookUpAtRate(float Rate);
-
+	/** Adds a single electric charge to the player */
+	virtual void AddCharge();
+	/** Drops a single electric charge from the player */
+	virtual void DropCharge();
+	/** Remove all electric charge from the player */
+	virtual void RemoveCharges();
+	/** Called via input to run an overlap sphere check, detects hold interactors  */
+	virtual void CheckForHoldInteractors();
+	/** Called via input to handle the release of hold interactors*/
+	virtual void CheckIfInteracting();
+	/** Handle the starting of interaction with hold interactors*/
+	virtual void StartInteracting();
+	/** Handle the ending of interaction with hold interactors*/
+	virtual void StopInteracting();
+	/** Handle the completion of interaction with hold interactors*/
+	virtual void HandleInteractionCompleted();
+	/** Handle the updating and handling of overcharge*/
+	virtual void HandleOverchargeTimer(float& deltaTime);
+	/** Resets the overcharge parameters*/
+	virtual void ResetOverchargeState();
 	struct TouchData
 	{
 		TouchData() { bIsPressed = false;Location=FVector::ZeroVector;}
