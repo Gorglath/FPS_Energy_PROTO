@@ -81,6 +81,7 @@ void AFPS_Energy_PROTOCharacter::SetupPlayerInputComponent(class UInputComponent
 
 void AFPS_Energy_PROTOCharacter::AddCharge()
 {
+	UE_LOG(LogTemp,Warning,TEXT("Added charge"));
 	m_iNumberOfCharges++;
 	if(m_iNumberOfCharges < m_iMaxNumberOfCharges)
 	{
@@ -100,12 +101,12 @@ void AFPS_Energy_PROTOCharacter::DropCharge()
 }
 void AFPS_Energy_PROTOCharacter::RemoveCharges()
 {
+	OnReleaseCharges(m_iNumberOfCharges);
 	m_iNumberOfCharges = 0;
 	if(m_bIsOvercharged)
 	{
 		ResetOverchargeState();
 	}
-	OnReleaseCharges();
 }
 void AFPS_Energy_PROTOCharacter::ResetOverchargeState()
 {
@@ -115,6 +116,7 @@ void AFPS_Energy_PROTOCharacter::ResetOverchargeState()
 
 void AFPS_Energy_PROTOCharacter::StartInteracting()
 {
+	OnStartingToInteract();
 	m_holdInteractor->StartInteraction();
 }
 void AFPS_Energy_PROTOCharacter::StopInteracting()
@@ -122,12 +124,15 @@ void AFPS_Energy_PROTOCharacter::StopInteracting()
 	if(!m_holdInteractor)
 		return;
 	
+	OnFinishedToInteract();
+	m_bIsHoldingInteraction = false;
 	m_holdInteractor->EndInteraction();
 	m_holdInteractor = nullptr;
 }
 void AFPS_Energy_PROTOCharacter::HandleOverchargeTimer(float& deltaTime)
 {
 	m_fOverchargeDurationCounter+= deltaTime;
+	OnOverchargeTick(m_fOverchargeDurationCounter);
 	if(m_fOverchargeDurationCounter < m_fOverChargeDuration)
 		return;
 
@@ -143,7 +148,11 @@ void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
 	
 	if(!m_holdInteractor)
 		return;
-
+	
+	if(m_bIsOvercharged && m_holdInteractor->GetInteractorType() == PYLON)
+		return;
+	
+	m_bIsHoldingInteraction = true;
 	if(m_holdInteractor->GetIsCompleted()
 		||(m_holdInteractor->GetInteractorType() == CHEST && m_iNumberOfCharges < 1))
 	{
@@ -155,7 +164,25 @@ void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
 
 	StartInteracting();
 }
-AHoldInteractor* AFPS_Energy_PROTOCharacter::DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor)
+void AFPS_Energy_PROTOCharacter::DetectCloseInteractions()
+{
+	m_detectionHoldFarInteraction = DetectCloseHoldInteractables(NONE,250.0f);
+	
+	if(!m_detectionHoldFarInteraction)
+		return;
+	m_detectionHoldNearInteraction = DetectCloseHoldInteractables(NONE,125.0f);
+
+	if(m_detectionHoldNearInteraction)
+	{
+		OnAbleToInteract();
+	}
+	else
+	{
+		OnDetectedFarHoldInteraction();
+	}
+}
+
+AHoldInteractor* AFPS_Energy_PROTOCharacter::DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor,float radius)
 {	TArray<AActor*> actorsFound;
 	TArray<TEnumAsByte<EObjectTypeQuery>> layersToDetect;
 	TArray<AActor*> actorsToIgnore;
@@ -172,40 +199,51 @@ AHoldInteractor* AFPS_Energy_PROTOCharacter::DetectCloseHoldInteractables(EHoldI
 	UKismetSystemLibrary::SphereOverlapActors(
 		GetWorld(),
 		GetActorLocation(),
-		125, //TODO: replace hardcoded variable
+		radius, //TODO: replace hardcoded variable
 		layersToDetect,
 		nullptr,
 		actorsToIgnore,
 		actorsFound
 		);
 
-	//DrawDebugSphere(GetWorld(),GetActorLocation(),100,18,FColor::Blue,false,5,0,1.0f);
+	//DrawDebugSphere(GetWorld(),GetActorLocation(),radius,18,FColor::Blue,false,5,0,1.0f);
 	
 	if(actorsFound.IsEmpty())
 		return nullptr;
 	
 	bool foundType{false};
+	AHoldInteractor* interactor{nullptr};
 	if(typeToLookFor == NONE)
-	{
-		foundType = true;
-		m_holdInteractor = Cast<AHoldInteractor>(actorsFound[0]);
-	}
-	else
 	{
 		for (AActor* actor : actorsFound)
 		{
-			m_holdInteractor = Cast<AHoldInteractor>(actor);
-			if(!m_holdInteractor)
+			interactor = Cast<AHoldInteractor>(actor);
+			if(!interactor)
 				continue;
 
-			if(m_holdInteractor->GetInteractorType() == typeToLookFor)
+			if(!interactor->GetIsCompleted())
 			{
 				foundType = true;
 				break;
 			}
 		}
 	}
-	return ((foundType)? m_holdInteractor:nullptr);
+	else
+	{
+		for (AActor* actor : actorsFound)
+		{
+			interactor = Cast<AHoldInteractor>(actor);
+			if(!interactor)
+				continue;
+
+			if(interactor->GetInteractorType() == typeToLookFor)
+			{
+				foundType = true;
+				break;
+			}
+		}
+	}
+	return ((foundType)? interactor:nullptr);
 }
 
 void AFPS_Energy_PROTOCharacter::CheckForHoldInteractors()
@@ -235,6 +273,8 @@ void AFPS_Energy_PROTOCharacter::CheckForEnergyDrop()
 	if(m_iNumberOfCharges >= m_iMaxNumberOfCharges - 1)
 		return;
 
+	if(m_bIsHoldingInteraction || m_bIsOvercharged)
+		return;
 	m_holdInteractor = DetectCloseHoldInteractables(DROP);
 	
 	if(!m_holdInteractor)
@@ -246,19 +286,29 @@ void AFPS_Energy_PROTOCharacter::CheckForEnergyDrop()
 
 void AFPS_Energy_PROTOCharacter::Tick(float DeltaSeconds)
 {
+	DetectCloseInteractions();
+
+	if(!m_detectionHoldNearInteraction)
+		return;
+	
 	CheckForEnergyDrop();
 	
+	UE_LOG(LogTemp,Warning,TEXT("CHECKING 1"));
 	if(m_bIsOvercharged)
 		HandleOverchargeTimer(DeltaSeconds);
 	
+	UE_LOG(LogTemp,Warning,TEXT("CHECKING 2"));
 	if(m_bIsHoldInteractorComplete)
 		return;
 
+	UE_LOG(LogTemp,Warning,TEXT("CHECKING 3"));
 	if(!m_holdInteractor)
 		return;
 
+	UE_LOG(LogTemp,Warning,TEXT("CHECKING"));
 	if(m_holdInteractor->GetIsCompleted())
 	{
+	UE_LOG(LogTemp,Warning,TEXT("COMPLETED"));
 		m_bIsHoldInteractorComplete = true;
 		HandleInteractionCompleted();
 	}

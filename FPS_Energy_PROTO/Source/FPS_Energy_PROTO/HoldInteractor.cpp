@@ -70,7 +70,8 @@ void AHoldInteractor::Tick(float DeltaTime)
 
 void AHoldInteractor::CompletedInteraction()
 {
-	Cast<AFPS_Energy_PROTOGameMode>(GetWorld()->GetAuthGameMode())->ActivateRandomPylon();
+	if(m_eHoldInteractorType == PYLON)
+		Cast<AFPS_Energy_PROTOGameMode>(GetWorld()->GetAuthGameMode())->ActivateRandomPylon();
 
 	m_bIsCompleted = true;
 	OnCompletedInteraction();

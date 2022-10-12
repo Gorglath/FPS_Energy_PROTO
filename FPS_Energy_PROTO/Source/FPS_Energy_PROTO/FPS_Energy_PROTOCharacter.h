@@ -34,10 +34,13 @@ class AFPS_Energy_PROTOCharacter : public ACharacter
 	
 	//helpers
 	AHoldInteractor* m_holdInteractor{nullptr};
+	AHoldInteractor* m_detectionHoldFarInteraction{nullptr};
+	AHoldInteractor* m_detectionHoldNearInteraction{nullptr};
 	int m_iNumberOfCharges{0};
 	float m_fOverchargeDurationCounter{0.0f};
 	bool m_bIsHoldInteractorComplete{true};
 	bool m_bIsOvercharged{false};
+	bool m_bIsHoldingInteraction{false};
 public:
 	AFPS_Energy_PROTOCharacter();
 
@@ -61,11 +64,21 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnAddedCharge(int currentNumberOfCharges);
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnReleaseCharges();
+	void OnReleaseCharges(int currentNumberOfCharges);
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnAddedOverCharge();
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnDroppedOvercharge();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnOverchargeTick(float currentOverchargeTime);
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnDetectedFarHoldInteraction();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnAbleToInteract();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnStartingToInteract();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnFinishedToInteract();
 protected:
 	
 	/** Fires a projectile. */
@@ -111,7 +124,9 @@ protected:
 	/** Check for energy charge drop collision*/
 	virtual void CheckForEnergyDrop();
 	/** Overlap sphere to detect hold interactables, return the first one hit*/
-	virtual AHoldInteractor* DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor = NONE);
+	virtual AHoldInteractor* DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor = NONE,float radius = 125.0f);
+	/** Detects overlapping holder interactors for events*/
+	virtual void DetectCloseInteractions();
 	struct TouchData
 	{
 		TouchData() { bIsPressed = false;Location=FVector::ZeroVector;}
