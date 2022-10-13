@@ -5,8 +5,11 @@
 
 AEnergyChargeDrop::AEnergyChargeDrop() : AHoldInteractor()
 {
+	//Set the hold interactable parameters.
 	m_bIsCompleted = false;
 	m_eHoldInteractorType = DROP;
+
+	//Create a basic static mesh and implement it in the static mesh component.
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> interactorMesh(TEXT("/Game/FPWeapon/Mesh/FirstPersonProjectileMesh.FirstPersonProjectileMesh"));
 	if(interactorMesh.Succeeded())
 	{

@@ -16,5 +16,6 @@ class FPS_ENERGY_PROTO_API AEnergyChargeDrop : public AHoldInteractor
 public:
 	AEnergyChargeDrop();
 	virtual void CompletedInteraction() override;
+	/** Call to instantly finish a hold interactor*/
 	virtual void InstanInteraction();
 };

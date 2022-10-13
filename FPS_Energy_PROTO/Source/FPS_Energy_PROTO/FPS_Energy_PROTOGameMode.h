@@ -19,6 +19,8 @@ class AFPS_Energy_PROTOGameMode : public AGameModeBase
 public:
 	AFPS_Energy_PROTOGameMode();
 	virtual void BeginPlay() override;
+
+	/** Activates a random non active pylon*/
 	void ActivateRandomPylon();
 };
 

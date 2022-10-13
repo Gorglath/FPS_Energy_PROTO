@@ -5,8 +5,11 @@
 
 AEnergyChest::AEnergyChest() : AHoldInteractor()
 {
+	//Set the hold interactable parameters.
 	m_bIsCompleted = false;
 	m_eHoldInteractorType = CHEST;
+
+	//Create a basic static mesh and implement it in the static mesh component.
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> interactorMesh(TEXT("/Game/LevelPrototyping/Meshes/SM_Cube.SM_Cube"));
 	if(interactorMesh.Succeeded())
 	{
@@ -24,6 +27,7 @@ void AEnergyChest::CompletedInteraction()
 
 void AEnergyChest::EndInteraction()
 {
+	//Reset the interaction.
 	m_fHoldingTimer = 0.0f;
 	m_bIsCompleted = false;
 	m_bIsInteracted = false;

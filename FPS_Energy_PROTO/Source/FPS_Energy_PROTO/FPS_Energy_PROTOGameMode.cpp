@@ -16,9 +16,11 @@ AFPS_Energy_PROTOGameMode::AFPS_Energy_PROTOGameMode()
 
 void AFPS_Energy_PROTOGameMode::BeginPlay()
 {
+	//Get all the pylons in the game.
 	TArray<AActor*> foundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(),AEnergyPylon::StaticClass(),foundActors);
 
+	//Check if you got valid pylons and add them to the list.
 	AEnergyPylon* energyPylon;
 	for (AActor* actor: foundActors)
 	{
@@ -30,12 +32,14 @@ void AFPS_Energy_PROTOGameMode::BeginPlay()
 		m_aPylons.Add(energyPylon);
 	}
 
+	//Activate random pylons.
 	for (int i = 0; i < m_iNumberOfActivePylonsAtATime; i++)
 		ActivateRandomPylon();
 }
 
 void AFPS_Energy_PROTOGameMode::ActivateRandomPylon()
 {
+	//Activate a random pylon that is not already activated.
 	int index;
 	do
 	{

@@ -42,16 +42,19 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Hold Interactor")
 	void OnResetInteraction();
 
-public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	/** Called when the interaction begins*/
 	virtual void StartInteraction();
 
+	/** Called when the player stop holding the interaction without completing the hold (before time)*/
 	virtual void EndInteraction();
 
+	/** Called to reset the interaction for recactivation*/
 	virtual void ResetInteraction();
 
+	/** Called when the player held the interaction long enough to be considered complete*/
 	virtual void CompletedInteraction();
 	
 	bool GetIsCompleted() const{return m_bIsCompleted;}

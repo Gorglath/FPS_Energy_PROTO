@@ -7,8 +7,11 @@
 
 AEnergyPylon::AEnergyPylon(): AHoldInteractor()
 {
+	//Set the hold interactable parameters.
 	m_bIsCompleted = true;
 	m_eHoldInteractorType = PYLON;
+	
+	//Create a basic static mesh and implement it in the static mesh component.
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> interactorMesh(TEXT("/Game/LevelPrototyping/Meshes/SM_Cylinder.SM_Cylinder"));
 	if(interactorMesh.Succeeded())
 	{
@@ -22,6 +25,7 @@ void AEnergyPylon::CompletedInteraction()
 {
 	Super::CompletedInteraction();
 
+	//Tell the game mode to activate another pylon.
 	Cast<AFPS_Energy_PROTOGameMode>(GetWorld()->GetAuthGameMode())->ActivateRandomPylon();
 
 	m_bIsCompleted = true;
@@ -29,6 +33,7 @@ void AEnergyPylon::CompletedInteraction()
 
 void AEnergyPylon::ResetInteraction()
 {
+	//Prepare the interaction for reactivation.
 	Super::ResetInteraction();
 	m_bIsCompleted = false;
 	m_fHoldingTimer = 0.0f;
@@ -37,6 +42,7 @@ void AEnergyPylon::ResetInteraction()
 
 void AEnergyPylon::EndInteraction()
 {
+	//Reset the interaction if not complete.
 	if(m_bIsCompleted)
 		return;
 
