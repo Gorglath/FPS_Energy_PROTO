@@ -13,6 +13,8 @@ class FPS_ENERGY_PROTO_API UTP_WeaponComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+	//helpers
+	bool m_bDidFire{false};
 public:
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category=Projectile)

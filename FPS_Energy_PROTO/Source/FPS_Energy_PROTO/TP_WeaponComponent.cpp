@@ -18,6 +18,9 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 
 void UTP_WeaponComponent::Fire()
 {
+	if(m_bDidFire)
+		return;
+	
 	if(Character == nullptr || Character->GetController() == nullptr)
 	{
 		return;
@@ -80,6 +83,7 @@ void UTP_WeaponComponent::AttachWeapon(AFPS_Energy_PROTOCharacter* TargetCharact
 		GetOwner()->AttachToComponent(Character->GetMesh1P(),AttachmentRules, FName(TEXT("GripPoint")));
 
 		// Register so that Fire is called every time the character tries to use the item being held
+		Character->OnUseItem.RemoveAll(this);
 		Character->OnUseItem.AddDynamic(this, &UTP_WeaponComponent::Fire);
 	}
 }
