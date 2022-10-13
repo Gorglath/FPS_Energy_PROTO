@@ -17,18 +17,17 @@ AFPS_Energy_PROTOGameMode::AFPS_Energy_PROTOGameMode()
 void AFPS_Energy_PROTOGameMode::BeginPlay()
 {
 	TArray<AActor*> foundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(),AHoldInteractor::StaticClass(),foundActors);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(),AEnergyPylon::StaticClass(),foundActors);
 
-	AHoldInteractor* holdInteractor;
+	AEnergyPylon* energyPylon;
 	for (AActor* actor: foundActors)
 	{
-		holdInteractor = Cast<AHoldInteractor>(actor);
+		energyPylon = Cast<AEnergyPylon>(actor);
 
-		if(!holdInteractor)
+		if(!energyPylon)
 			continue;
 
-		if(holdInteractor->GetInteractorType() == PYLON)
-			m_aPylons.Add(holdInteractor);
+		m_aPylons.Add(energyPylon);
 	}
 
 	for (int i = 0; i < m_iNumberOfActivePylonsAtATime; i++)
