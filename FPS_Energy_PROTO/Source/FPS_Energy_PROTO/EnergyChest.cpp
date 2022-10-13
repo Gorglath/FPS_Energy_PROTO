@@ -3,7 +3,7 @@
 
 #include "EnergyChest.h"
 
-AEnergyChest::AEnergyChest()
+AEnergyChest::AEnergyChest() : AHoldInteractor()
 {
 	m_bIsCompleted = false;
 	m_eHoldInteractorType = CHEST;
@@ -18,7 +18,15 @@ AEnergyChest::AEnergyChest()
 
 void AEnergyChest::CompletedInteraction()
 {
+	m_bIsCompleted = true;
 	Super::CompletedInteraction();
+}
+
+void AEnergyChest::EndInteraction()
+{
+	m_fHoldingTimer = 0.0f;
+	m_bIsCompleted = false;
+	m_bIsInteracted = false;
 }
 
 

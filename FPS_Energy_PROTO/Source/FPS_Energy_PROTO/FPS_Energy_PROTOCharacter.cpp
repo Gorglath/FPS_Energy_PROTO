@@ -288,11 +288,9 @@ void AFPS_Energy_PROTOCharacter::Tick(float DeltaSeconds)
 {
 	CheckForEnergyDrop();
 	
-	UE_LOG(LogTemp,Warning,TEXT("CHECKING 1"));
 	if(m_bIsOvercharged)
 		HandleOverchargeTimer(DeltaSeconds);
 	
-	UE_LOG(LogTemp,Warning,TEXT("CHECKING 2"));
 	if(m_bIsHoldInteractorComplete)
 		return;
 

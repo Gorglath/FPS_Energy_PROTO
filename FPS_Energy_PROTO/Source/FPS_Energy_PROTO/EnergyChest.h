@@ -15,7 +15,8 @@ class FPS_ENERGY_PROTO_API AEnergyChest : public AHoldInteractor
 	GENERATED_BODY()
 public:
 	AEnergyChest();
-	
+
+	virtual void EndInteraction() override;
 	virtual void CompletedInteraction() override;
 	
 };

@@ -5,7 +5,7 @@
 
 #include "FPS_Energy_PROTOGameMode.h"
 
-AEnergyPylon::AEnergyPylon()
+AEnergyPylon::AEnergyPylon(): AHoldInteractor()
 {
 	m_bIsCompleted = true;
 	m_eHoldInteractorType = PYLON;
