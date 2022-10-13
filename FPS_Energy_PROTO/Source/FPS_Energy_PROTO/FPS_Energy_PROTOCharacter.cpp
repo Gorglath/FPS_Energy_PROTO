@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/InputSettings.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -38,13 +39,29 @@ AFPS_Energy_PROTOCharacter::AFPS_Energy_PROTOCharacter()
 	Mesh1P->SetRelativeRotation(FRotator(1.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
 
+	m_farSphere = CreateDefaultSubobject<USphereComponent>(TEXT("FarDetectionSphereComponent"));
+	m_farSphere->InitSphereRadius(250.f);
+	m_farSphere->BodyInstance.SetCollisionProfileName("OverlapAllDynamic");
+	m_farSphere->SetGenerateOverlapEvents(true);
+	m_farSphere->OnComponentBeginOverlap.AddDynamic(this, &AFPS_Energy_PROTOCharacter::OnDetectedFarHoldInteraction);
+	
+	m_nearSphere = CreateDefaultSubobject<USphereComponent>(TEXT("NearDetectionSphereComponent"));
+	m_nearSphere->InitSphereRadius(125.f);
+	m_nearSphere->BodyInstance.SetCollisionProfileName("OverlapAllDynamic");
+	m_nearSphere->SetGenerateOverlapEvents(true);
+	m_nearSphere->OnComponentBeginOverlap.AddDynamic(this, &AFPS_Energy_PROTOCharacter::OnDetectedNearHoldInteraction);
 }
 
 void AFPS_Energy_PROTOCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-
+	FAttachmentTransformRules rules = FAttachmentTransformRules( EAttachmentRule::SnapToTarget,
+		EAttachmentRule::SnapToTarget,
+		EAttachmentRule::SnapToTarget,
+		true);;
+	m_farSphere->AttachToComponent(GetMesh(),rules);
+	m_nearSphere->AttachToComponent(GetMesh(),rules);
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -81,7 +98,6 @@ void AFPS_Energy_PROTOCharacter::SetupPlayerInputComponent(class UInputComponent
 
 void AFPS_Energy_PROTOCharacter::AddCharge()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Added charge"));
 	m_iNumberOfCharges++;
 	if(m_iNumberOfCharges < m_iMaxNumberOfCharges)
 	{
@@ -164,23 +180,7 @@ void AFPS_Energy_PROTOCharacter::CheckIfInteracting()
 
 	StartInteracting();
 }
-void AFPS_Energy_PROTOCharacter::DetectCloseInteractions()
-{
-	m_detectionHoldFarInteraction = DetectCloseHoldInteractables(NONE,250.0f);
-	
-	if(!m_detectionHoldFarInteraction)
-		return;
-	m_detectionHoldNearInteraction = DetectCloseHoldInteractables(NONE,125.0f);
 
-	if(m_detectionHoldNearInteraction)
-	{
-		OnAbleToInteract();
-	}
-	else
-	{
-		OnDetectedFarHoldInteraction();
-	}
-}
 
 AHoldInteractor* AFPS_Energy_PROTOCharacter::DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor,float radius)
 {	TArray<AActor*> actorsFound;
@@ -286,11 +286,6 @@ void AFPS_Energy_PROTOCharacter::CheckForEnergyDrop()
 
 void AFPS_Energy_PROTOCharacter::Tick(float DeltaSeconds)
 {
-	DetectCloseInteractions();
-
-	if(!m_detectionHoldNearInteraction)
-		return;
-	
 	CheckForEnergyDrop();
 	
 	UE_LOG(LogTemp,Warning,TEXT("CHECKING 1"));

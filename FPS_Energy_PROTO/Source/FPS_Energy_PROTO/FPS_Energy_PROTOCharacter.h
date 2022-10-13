@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "FPS_Energy_PROTOCharacter.generated.h"
 
+class USphereComponent;
 class UInputComponent;
 class USkeletalMeshComponent;
 class USceneComponent;
@@ -31,11 +32,13 @@ class AFPS_Energy_PROTOCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
 
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Collision", meta = (AllowPrivateAccess = "true"))
+	USphereComponent* m_farSphere;
 	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Collision", meta = (AllowPrivateAccess = "true"))
+	USphereComponent* m_nearSphere;
 	//helpers
 	AHoldInteractor* m_holdInteractor{nullptr};
-	AHoldInteractor* m_detectionHoldFarInteraction{nullptr};
-	AHoldInteractor* m_detectionHoldNearInteraction{nullptr};
 	int m_iNumberOfCharges{0};
 	float m_fOverchargeDurationCounter{0.0f};
 	bool m_bIsHoldInteractorComplete{true};
@@ -72,9 +75,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnOverchargeTick(float currentOverchargeTime);
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnDetectedFarHoldInteraction();
+	void OnDetectedFarHoldInteraction(UPrimitiveComponent* DetectedComp,AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnAbleToInteract();
+	void OnDetectedNearHoldInteraction(UPrimitiveComponent* DetectedComp,AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnStartingToInteract();
 	UFUNCTION(BlueprintImplementableEvent)
@@ -125,8 +128,6 @@ protected:
 	virtual void CheckForEnergyDrop();
 	/** Overlap sphere to detect hold interactables, return the first one hit*/
 	virtual AHoldInteractor* DetectCloseHoldInteractables(EHoldInteractorType typeToLookFor = NONE,float radius = 125.0f);
-	/** Detects overlapping holder interactors for events*/
-	virtual void DetectCloseInteractions();
 	struct TouchData
 	{
 		TouchData() { bIsPressed = false;Location=FVector::ZeroVector;}
